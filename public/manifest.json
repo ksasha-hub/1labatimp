@@ -1,0 +1,8 @@
+{  
+  "short_name": "КиберБезопасность",
+  "name": "Каталог угроз информационной безопасности",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#1a202c",
+  "background_color": "#f0f4f8"
+}
