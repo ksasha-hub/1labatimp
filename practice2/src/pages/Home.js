@@ -18,7 +18,6 @@ const Home = () => {
   const [error,   setError]   = useState(null); 
   const navigate = useNavigate();
 
-  // Состояния для фильтрации
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -46,7 +45,6 @@ const Home = () => {
       .catch(err => setError(`Ошибка удаления: ${err.message}`));
   };
 
-  // 1. Логика фильтрации
   const filteredThreats = useMemo(() => {
     return threats.filter(threat => {
       const matchSearch = threat.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -55,7 +53,6 @@ const Home = () => {
     });
   }, [threats, searchTerm, selectedCategory]);
 
-  // 2. Логика сводной таблицы (подсчет уровней опасности)
   const severitySummary = useMemo(() => {
     const summary = { 'Критическая': 0, 'Высокая': 0, 'Средняя': 0, 'Низкая': 0 };
     filteredThreats.forEach(threat => {
@@ -66,7 +63,6 @@ const Home = () => {
     return summary;
   }, [filteredThreats]);
 
-  // Уникальные категории для выпадающего списка
   const uniqueCategories = useMemo(() => {
     const cats = threats.map(t => t.category).filter(Boolean);
     return [...new Set(cats)];
@@ -80,7 +76,7 @@ const Home = () => {
 
       {error && <div className="error-box"> {error}</div>}
 
-      {/* --- БЛОК ФИЛЬТРАЦИИ И СВОДНОЙ ТАБЛИЦЫ --- */}
+      {}
       {!error && threats.length > 0 && (
         <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
           
@@ -127,7 +123,7 @@ const Home = () => {
 
         </div>
       )}
-      {/* ------------------------------------------- */}
+      {}
 
       {threats.length === 0 && !error ? (
         <div className="empty-state">
