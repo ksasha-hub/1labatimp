@@ -84,3 +84,92 @@ body {
 .form-error    { color: #e53e3e; font-size: 13px; margin-top: 4px; display: block; }
 .form-textarea { height: 100px; resize: vertical; }
 .form-actions  { display: flex; gap: 12px; margin-top: 24px; align-items: center; }
+
+/* ===== БЛОК ФИЛЬТРАЦИИ =====
+   Панель с элементами управления фильтрацией: поиск, выпадающие списки, кнопка сброса. */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* Поле текстового поиска */
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .2s, box-shadow .2s;
+}
+.filter-input:focus {
+  outline: none;
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99,179,237,.2);
+}
+
+/* Выпадающие списки фильтрации */
+.filter-select {
+  padding: 9px 14px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fff;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+}
+.filter-select:focus {
+  outline: none;
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99,179,237,.2);
+}
+
+/* Кнопка сброса фильтров */
+.filter-reset { font-size: 13px; padding: 9px 16px; }
+
+/* ===== СВОДНАЯ ТАБЛИЦА =====
+   Карточка со сводной таблицей агрегированных данных по отфильтрованным угрозам. */
+.summary-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.summary-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a202c;
+  margin-bottom: 14px;
+}
+
+/* Таблица сводки */
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.summary-table th {
+  text-align: left;
+  padding: 8px 14px;
+  background: #f7fafc;
+  color: #4a5568;
+  font-weight: 700;
+  border-bottom: 2px solid #e2e8f0;
+}
+.summary-table td {
+  padding: 8px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #2d3748;
+}
+.summary-table tr:last-child td { border-bottom: none; }
