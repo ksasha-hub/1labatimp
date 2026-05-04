@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllThreats, deleteThreat } from '../api/threatsApi';
 
@@ -10,6 +10,158 @@ const getBadgeClass = (severity) => {
     'Низкая':      'badge badge-low',
   };
   return map[severity] || 'badge badge-low';
+};
+
+// Компонент выпадающего фильтра для каждого столбца
+const ColumnFilter = ({ column, onFilter, currentFilter, uniqueValues = [] }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [tempValue, setTempValue] = useState(currentFilter);
+  const dropdownRef = useRef(null);
+
+  // Закрытие при клике вне компонента
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleApply = () => {
+    onFilter(tempValue);
+    setIsOpen(false);
+  };
+
+  const handleClear = () => {
+    setTempValue('');
+    onFilter('');
+    setIsOpen(false);
+  };
+
+  const getFilterInput = () => {
+    if (column === 'category' || column === 'severity' || column === 'year') {
+      return (
+        <select
+          value={tempValue}
+          onChange={(e) => setTempValue(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '8px',
+            borderRadius: '4px',
+            border: '1px solid #ced4da',
+            fontSize: '14px'
+          }}
+        >
+          <option value="">Все</option>
+          {uniqueValues.map(value => (
+            <option key={value} value={value}>{value}</option>
+          ))}
+        </select>
+      );
+    }
+    
+    return (
+      <input
+        type="text"
+        placeholder={`Фильтр по ${column}...`}
+        value={tempValue}
+        onChange={(e) => setTempValue(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '8px',
+          borderRadius: '4px',
+          border: '1px solid #ced4da',
+          fontSize: '14px'
+        }}
+        autoFocus
+      />
+    );
+  };
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={dropdownRef}>
+      <span 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ 
+          cursor: 'pointer', 
+          marginLeft: '8px',
+          fontSize: '12px',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '24px',
+          height: '24px',
+          borderRadius: '4px',
+          backgroundColor: currentFilter ? '#007bff' : '#6c757d',
+          color: 'white',
+          transition: 'all 0.2s'
+        }}
+        title="Фильтр"
+      >
+        {currentFilter ? '🔽' : '▼'}
+      </span>
+      
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: '0',
+          marginTop: '5px',
+          backgroundColor: 'white',
+          border: '1px solid #dee2e6',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          padding: '12px',
+          minWidth: '250px',
+          zIndex: 1000,
+          backgroundColor: 'white'
+        }}>
+          <div style={{ marginBottom: '10px' }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '13px', color: '#495057' }}>
+              Фильтр: {column === 'name' ? 'Название' : 
+                        column === 'category' ? 'Категория' : 
+                        column === 'severity' ? 'Уровень опасности' : 
+                        column === 'year' ? 'Год' :
+                        column === 'description' ? 'Описание' : column}
+            </div>
+            {getFilterInput()}
+          </div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button
+              onClick={handleClear}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Очистить
+            </button>
+            <button
+              onClick={handleApply}
+              style={{
+                padding: '6px 12px',
+                fontSize: '12px',
+                backgroundColor: '#007bff',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Применить
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const Home = () => {
@@ -146,8 +298,8 @@ const Home = () => {
             <div>
               <strong>📊 Найдено угроз: {filteredThreats.length}</strong> из {threats.length}
               {hasActiveFilters && (
-                <span style={{ marginLeft: '15px', color: '#6c757d' }}>
-                  🔍 Фильтры активны
+                <span style={{ marginLeft: '15px', color: '#007bff' }}>
+                  🔍 Фильтры активны ({Object.values(filters).filter(v => v !== '').length})
                 </span>
               )}
             </div>
@@ -156,7 +308,7 @@ const Home = () => {
                 onClick={clearAllFilters}
                 style={{
                   padding: '6px 12px',
-                  backgroundColor: '#6c757d',
+                  backgroundColor: '#dc3545',
                   color: 'white',
                   border: 'none',
                   borderRadius: '4px',
@@ -168,7 +320,7 @@ const Home = () => {
             )}
           </div>
 
-          {/* Excel-подобная таблица с фильтрацией в каждом столбце */}
+          {/* Excel-подобная таблица со скрытыми фильтрами */}
           <div style={{ overflowX: 'auto', marginTop: '20px' }}>
             <table style={{ 
               width: '100%', 
@@ -177,124 +329,69 @@ const Home = () => {
               boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
             }}>
               <thead>
-                {/* Заголовки столбцов */}
                 <tr style={{ 
                   backgroundColor: '#343a40', 
                   color: 'white'
                 }}>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '80px' }}>ID</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '200px' }}>Название угрозы</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '150px' }}>Категория</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '130px' }}>Уровень опасности</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '80px' }}>Год</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '250px' }}>Описание</th>
-                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'center', minWidth: '150px' }}>Действия</th>
-                 </tr>
-                
-                {/* Строка фильтров */}
-                <tr style={{ backgroundColor: '#e9ecef' }}>
-                  {/* Фильтр ID */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <input
-                      type="text"
-                      placeholder="Фильтр ID..."
-                      value={filters.id}
-                      onChange={(e) => handleFilterChange('id', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '100px' }}>
+                    ID
+                    <ColumnFilter 
+                      column="id"
+                      onFilter={(value) => handleFilterChange('id', value)}
+                      currentFilter={filters.id}
                     />
                   </th>
                   
-                  {/* Фильтр Названия */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <input
-                      type="text"
-                      placeholder="Фильтр названия..."
-                      value={filters.name}
-                      onChange={(e) => handleFilterChange('name', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '200px' }}>
+                    Название угрозы
+                    <ColumnFilter 
+                      column="name"
+                      onFilter={(value) => handleFilterChange('name', value)}
+                      currentFilter={filters.name}
                     />
                   </th>
                   
-                  {/* Фильтр Категории (выпадающий список) */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <select
-                      value={filters.category}
-                      onChange={(e) => handleFilterChange('category', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
-                    >
-                      <option value="">Все категории</option>
-                      {uniqueValues.categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </th>
-                  
-                  {/* Фильтр Уровня опасности (выпадающий список) */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <select
-                      value={filters.severity}
-                      onChange={(e) => handleFilterChange('severity', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
-                    >
-                      <option value="">Все уровни</option>
-                      {uniqueValues.severities.map(sev => (
-                        <option key={sev} value={sev}>{sev}</option>
-                      ))}
-                    </select>
-                  </th>
-                  
-                  {/* Фильтр Года (выпадающий список) */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <select
-                      value={filters.year}
-                      onChange={(e) => handleFilterChange('year', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
-                    >
-                      <option value="">Все годы</option>
-                      {uniqueValues.years.map(year => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                  </th>
-                  
-                  {/* Фильтр Описания */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6' }}>
-                    <input
-                      type="text"
-                      placeholder="Фильтр описания..."
-                      value={filters.description}
-                      onChange={(e) => handleFilterChange('description', e.target.value)}
-                      style={{ width: '100%', padding: '6px', borderRadius: '3px', border: '1px solid #ced4da', fontSize: '12px' }}
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '150px' }}>
+                    Категория
+                    <ColumnFilter 
+                      column="category"
+                      onFilter={(value) => handleFilterChange('category', value)}
+                      currentFilter={filters.category}
+                      uniqueValues={uniqueValues.categories}
                     />
                   </th>
                   
-                  {/* Действия - кнопка сброса фильтров этого столбца */}
-                  <th style={{ padding: '8px', border: '1px solid #dee2e6', textAlign: 'center' }}>
-                    <button
-                      onClick={() => {
-                        setFilters({
-                          id: '',
-                          name: '',
-                          category: '',
-                          severity: '',
-                          year: '',
-                          description: ''
-                        });
-                      }}
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: '11px',
-                        backgroundColor: '#dc3545',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '3px',
-                        cursor: 'pointer',
-                        width: '100%'
-                      }}
-                      title="Сбросить все фильтры"
-                    >
-                      ✖️ Сбросить
-                    </button>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '150px' }}>
+                    Уровень опасности
+                    <ColumnFilter 
+                      column="severity"
+                      onFilter={(value) => handleFilterChange('severity', value)}
+                      currentFilter={filters.severity}
+                      uniqueValues={uniqueValues.severities}
+                    />
+                  </th>
+                  
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '100px' }}>
+                    Год
+                    <ColumnFilter 
+                      column="year"
+                      onFilter={(value) => handleFilterChange('year', value)}
+                      currentFilter={filters.year}
+                      uniqueValues={uniqueValues.years}
+                    />
+                  </th>
+                  
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left', minWidth: '300px' }}>
+                    Описание
+                    <ColumnFilter 
+                      column="description"
+                      onFilter={(value) => handleFilterChange('description', value)}
+                      currentFilter={filters.description}
+                    />
+                  </th>
+                  
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'center', minWidth: '150px' }}>
+                    Действия
                   </th>
                 </tr>
               </thead>
@@ -359,7 +456,7 @@ const Home = () => {
                     <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}>
                       🔍 По вашему запросу ничего не найдено
                     </td>
-                  </tr>
+                  </td>
                 )}
               </tbody>
             </table>
