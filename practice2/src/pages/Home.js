@@ -18,7 +18,6 @@ const Home = () => {
   const [error,   setError]   = useState(null); 
   const navigate = useNavigate();
 
-  // Состояния для фильтрации
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
@@ -46,14 +45,12 @@ const Home = () => {
       .catch(err => setError(`Ошибка удаления: ${err.message}`));
   };
 
-  // 1. Логика фильтрации - ПОИСК ПО ВСЕМ ПОЛЯМ
   const filteredThreats = useMemo(() => {
     if (!searchTerm.trim() && !selectedCategory) return threats;
     
     const searchLower = searchTerm.toLowerCase().trim();
     
     return threats.filter(threat => {
-      // Поиск по всем текстовым полям
       const matchSearch = !searchTerm.trim() || [
         threat.name,
         threat.category,
@@ -67,7 +64,6 @@ const Home = () => {
     });
   }, [threats, searchTerm, selectedCategory]);
 
-  // 2. Логика сводной таблицы (подсчет уровней опасности)
   const severitySummary = useMemo(() => {
     const summary = { 'Критическая': 0, 'Высокая': 0, 'Средняя': 0, 'Низкая': 0 };
     filteredThreats.forEach(threat => {
@@ -78,7 +74,6 @@ const Home = () => {
     return summary;
   }, [filteredThreats]);
 
-  // Уникальные категории для выпадающего списка
   const uniqueCategories = useMemo(() => {
     const cats = threats.map(t => t.category).filter(Boolean);
     return [...new Set(cats)];
@@ -92,7 +87,7 @@ const Home = () => {
 
       {error && <div className="error-box"> {error}</div>}
 
-      {/* --- БЛОК ФИЛЬТРАЦИИ И СВОДНОЙ ТАБЛИЦЫ --- */}
+      {}
       {!error && threats.length > 0 && (
         <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px' }}>
           
@@ -116,7 +111,7 @@ const Home = () => {
             </select>
           </div>
 
-          {/* Сводная таблица */}
+          {}
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
             <thead>
               <tr style={{ backgroundColor: '#e9ecef', textAlign: 'left' }}>
@@ -148,7 +143,7 @@ const Home = () => {
         </div>
       ) : (
         <>
-          {/* Excel-подобная таблица */}
+          {}
           <div style={{ overflowX: 'auto', marginTop: '20px' }}>
             <table style={{ 
               width: '100%', 
@@ -225,7 +220,7 @@ const Home = () => {
             </table>
           </div>
           
-          {/* Кнопка добавления внизу таблицы */}
+          {}
           <div style={{ marginTop: '20px', textAlign: 'right' }}>
             <Link to="/add" className="btn btn-save" style={{ padding: '10px 20px' }}>
               + Добавить угрозу
