@@ -46,11 +46,23 @@ const Home = () => {
       .catch(err => setError(`Ошибка удаления: ${err.message}`));
   };
 
-  // 1. Логика фильтрации
+  // 1. Логика фильтрации - ПОИСК ПО ВСЕМ ПОЛЯМ
   const filteredThreats = useMemo(() => {
+    if (!searchTerm.trim() && !selectedCategory) return threats;
+    
+    const searchLower = searchTerm.toLowerCase().trim();
+    
     return threats.filter(threat => {
-      const matchSearch = threat.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchCategory = selectedCategory === '' || threat.category === selectedCategory;
+      // Поиск по всем текстовым полям
+      const matchSearch = !searchTerm.trim() || [
+        threat.name,
+        threat.category,
+        threat.description,
+        threat.severity,
+        threat.year?.toString()
+      ].some(field => field?.toLowerCase().includes(searchLower));
+      
+      const matchCategory = !selectedCategory || threat.category === selectedCategory;
       return matchSearch && matchCategory;
     });
   }, [threats, searchTerm, selectedCategory]);
@@ -87,7 +99,7 @@ const Home = () => {
           <div style={{ display: 'flex', gap: '15px', marginBottom: '15px' }}>
             <input 
               type="text" 
-              placeholder="Поиск по названию..." 
+              placeholder="Поиск по названию, категории, описанию, году или уровню опасности..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{ padding: '8px', flex: 1, borderRadius: '4px', border: '1px solid #ccc' }}
@@ -104,6 +116,7 @@ const Home = () => {
             </select>
           </div>
 
+          {/* Сводная таблица */}
           <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white' }}>
             <thead>
               <tr style={{ backgroundColor: '#e9ecef', textAlign: 'left' }}>
@@ -124,10 +137,8 @@ const Home = () => {
               </tr>
             </tbody>
           </table>
-
         </div>
       )}
-      {/* ------------------------------------------- */}
 
       {threats.length === 0 && !error ? (
         <div className="empty-state">
@@ -136,34 +147,91 @@ const Home = () => {
           <Link to="/add" className="btn btn-save">+ Добавить угрозу</Link>
         </div>
       ) : (
-        <div className="cards-grid">
-          {filteredThreats.map(threat => (
-            <div className="card" key={threat.id}>              
-              <span className={getBadgeClass(threat.severity)}>{threat.severity}</span>
-              <Link to={`/detail/${threat.id}`} className="card-title">
-                {threat.name}
-              </Link>
-              <div className="card-meta">
-                📁 {threat.category} &nbsp;|&nbsp; {threat.year}
-              </div>
-              <p className="card-desc">{threat.description}</p>
-              <div className="card-actions">
-                <button className="btn btn-edit"
-                  onClick={() => navigate(`/edit/${threat.id}`)}>
-                  Изменить
-                </button>
-                <button className="btn btn-delete"
-                  onClick={() => handleDelete(threat.id, threat.name)}>
-                  Удалить
-                </button>
-              </div>
-            </div>
-          ))}
+        <>
+          {/* Excel-подобная таблица */}
+          <div style={{ overflowX: 'auto', marginTop: '20px' }}>
+            <table style={{ 
+              width: '100%', 
+              borderCollapse: 'collapse', 
+              backgroundColor: 'white',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <thead>
+                <tr style={{ 
+                  backgroundColor: '#343a40', 
+                  color: 'white',
+                  position: 'sticky',
+                  top: 0
+                }}>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>ID</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>Название угрозы</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>Категория</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>Уровень опасности</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>Год</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'left' }}>Описание</th>
+                  <th style={{ padding: '12px', border: '1px solid #454d55', textAlign: 'center' }}>Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredThreats.map((threat, index) => (
+                  <tr key={threat.id} style={{ 
+                    backgroundColor: index % 2 === 0 ? '#ffffff' : '#f8f9fa',
+                    transition: 'background-color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e3f2fd'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#ffffff' : '#f8f9fa'}>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6' }}>{threat.id}</td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6' }}>
+                      <Link to={`/detail/${threat.id}`} style={{ textDecoration: 'none', color: '#007bff', fontWeight: '500' }}>
+                        {threat.name}
+                      </Link>
+                    </td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6' }}>{threat.category || '—'}</td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6' }}>
+                      <span className={getBadgeClass(threat.severity)}>{threat.severity}</span>
+                    </td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6', textAlign: 'center' }}>{threat.year || '—'}</td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6', maxWidth: '300px' }}>
+                      {threat.description?.length > 100 
+                        ? `${threat.description.substring(0, 100)}...` 
+                        : threat.description || '—'}
+                    </td>
+                    <td style={{ padding: '10px', border: '1px solid #dee2e6', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      <button 
+                        className="btn btn-edit"
+                        onClick={() => navigate(`/edit/${threat.id}`)}
+                        style={{ marginRight: '8px' }}
+                      >
+                        ✏️ Изменить
+                      </button>
+                      <button 
+                        className="btn btn-delete"
+                        onClick={() => handleDelete(threat.id, threat.name)}
+                      >
+                        🗑️ Удалить
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                
+                {filteredThreats.length === 0 && threats.length > 0 && (
+                  <tr>
+                    <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}>
+                      🔍 По вашему запросу ничего не найдено
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           
-          {filteredThreats.length === 0 && threats.length > 0 && (
-            <p style={{ gridColumn: '1 / -1', textAlign: 'center', color: '#6c757d' }}>По вашему запросу ничего не найдено.</p>
-          )}
-        </div>
+          {/* Кнопка добавления внизу таблицы */}
+          <div style={{ marginTop: '20px', textAlign: 'right' }}>
+            <Link to="/add" className="btn btn-save" style={{ padding: '10px 20px' }}>
+              + Добавить угрозу
+            </Link>
+          </div>
+        </>
       )}
     </div>
   );
