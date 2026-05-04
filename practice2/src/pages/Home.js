@@ -456,7 +456,7 @@ const Home = () => {
                     <td colSpan="7" style={{ padding: '40px', textAlign: 'center', color: '#6c757d' }}>
                       🔍 По вашему запросу ничего не найдено
                     </td>
-                  </td>
+                  </tr>
                 )}
               </tbody>
             </table>
